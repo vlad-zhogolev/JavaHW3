@@ -1,11 +1,14 @@
 import javafx.animation.*;
 import javafx.application.Application;
+import javafx.beans.property.DoubleProperty;
+import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -17,6 +20,7 @@ import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import javafx.scene.text.Font;
 import javafx.util.Duration;
+
 import java.time.LocalTime;
 
 /*
@@ -39,16 +43,16 @@ public class App extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         HBox root = new HBox();
+        root.setMinWidth(width);
+        root.setMinHeight(height);
 
         Pane clockRoot = new Pane();
-        clockRoot.setMinWidth(clockSide);
-        clockRoot.setMinHeight(clockSide);
+        clockRoot.setPrefSize(clockSide, clockSide);
         root.getChildren().add(clockRoot);
 
-        Canvas clockCanvas = new Canvas(clockSide, clockSide);
-        clockRoot.getChildren().add(clockCanvas);
-
         VBox controls = new VBox();
+        controls.setPrefSize(width - clockSide, height);
+        controls.setSpacing(5.0);
         root.getChildren().add(controls);
 
         Circle circle = new Circle(
@@ -194,29 +198,69 @@ public class App extends Application {
         secondHandBegin.play();
 
         Button stopClocksButton = new Button("Stop");
-        Button continueClockButton = new Button("Continue");
+        stopClocksButton.setPrefWidth(80);
 
-        controls.getChildren().add(stopClocksButton);
+        Button continueClockButton = new Button("Continue");
+        continueClockButton.setDisable(true);
+
+        TilePane buttonTiles = new TilePane(Orientation.HORIZONTAL, 10, 0, stopClocksButton, continueClockButton);
+        controls.getChildren().add(buttonTiles);
+
+        Slider watchAnimationRateSlider = new Slider(0.0, 10, 1);
+        watchAnimationRateSlider.setPrefSize(controls.getWidth(), 50);
+        watchAnimationRateSlider.setShowTickLabels(true);
+        watchAnimationRateSlider.setShowTickMarks(true);
+        watchAnimationRateSlider.setSnapToTicks(true);
+        watchAnimationRateSlider.setMajorTickUnit(1.0);
+        watchAnimationRateSlider.setMinorTickCount(10);
+
+        controls.getChildren().add(watchAnimationRateSlider);
+
         stopClocksButton.setOnAction(event -> {
             hourHandAnimation.pause();
             minuteHandAnimation.pause();
-            secondHandAnimation.pause();
-            secondHandBegin.pause();
+            if (secondHandAnimation.getStatus() == Animation.Status.RUNNING)
+                secondHandAnimation.pause();
+            if (secondHandBegin.getStatus() == Animation.Status.RUNNING)
+                secondHandBegin.pause();
+            watchAnimationRateSlider.setDisable(true);
             continueClockButton.setDisable(false);
         });
 
-        continueClockButton.setDisable(true);
-        controls.getChildren().add(continueClockButton);
         continueClockButton.setOnAction(event -> {
+            if (secondHandBegin.getStatus() == Animation.Status.PAUSED)
+                secondHandBegin.play();
             if (secondHandAnimation.getStatus() == Animation.Status.PAUSED)
                 secondHandAnimation.play();
-            else {
-                secondHandBegin.play();
-                System.out.println(secondHandAnimation.getStatus());
-            }
             minuteHandAnimation.play();
             hourHandAnimation.play();
             continueClockButton.setDisable(true);
+            watchAnimationRateSlider.setDisable(false);
+        });
+
+        watchAnimationRateSlider.valueProperty().addListener(observable -> {
+            DoubleProperty value = (DoubleProperty) observable;
+            if (value.get() == 0) {
+                hourHandAnimation.pause();
+                minuteHandAnimation.pause();
+                if (secondHandBegin.getStatus() == Animation.Status.PAUSED)
+                    secondHandBegin.pause();
+                if (secondHandAnimation.getStatus() == Animation.Status.PAUSED)
+                    secondHandAnimation.pause();
+            } else {
+                hourHandAnimation.play();
+                minuteHandAnimation.play();
+                if (secondHandBegin.getStatus() == Animation.Status.PAUSED)
+                    secondHandBegin.play();
+                if (secondHandAnimation.getStatus() == Animation.Status.PAUSED)
+                    secondHandAnimation.play();
+
+                hourHandAnimation.setRate(value.get());
+                minuteHandAnimation.setRate(value.get());
+                secondHandAnimation.setRate(value.get());
+                secondHandBegin.setRate(value.get());
+            }
+
         });
 
         primaryStage.setScene(new Scene(root));
