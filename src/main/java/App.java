@@ -16,7 +16,6 @@ import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import javafx.scene.text.Font;
 import javafx.util.Duration;
-
 import java.time.LocalTime;
 
 public class App extends Application {
@@ -26,7 +25,7 @@ public class App extends Application {
     private int clockRadius = 150;
     private int clockSide = height;
     private Point2D clockCenter = new Point2D(clockSide / 2.0, clockSide / 2.0);
-    
+
     private int hourStrokeWidth = 6;
     private int hourStrokeHeight = 12;
     private int minuteStrokeWidth = hourStrokeWidth / 2 + hourStrokeWidth % 2;
@@ -239,9 +238,9 @@ public class App extends Application {
             if (value.get() == 0) {
                 hourHandAnimation.pause();
                 minuteHandAnimation.pause();
-                if (secondHandBegin.getStatus() == Animation.Status.PAUSED)
+                if (secondHandBegin.getStatus() == Animation.Status.RUNNING)
                     secondHandBegin.pause();
-                if (secondHandAnimation.getStatus() == Animation.Status.PAUSED)
+                if (secondHandAnimation.getStatus() == Animation.Status.RUNNING)
                     secondHandAnimation.pause();
             } else {
                 hourHandAnimation.play();
